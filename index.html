@@ -2,22 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0a0a2e">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Nebula Skimmer</title>
   <style>
 * {
   box-sizing: border-box;
 }
 
+:root {
+  --app-width: 100dvw;
+  --app-height: 100dvh;
+}
+
 html, body {
   margin: 0;
   width: 100%;
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
   background: #0a0a2e;
 }
 
 body {
-  min-height: 100dvh;
+  height: 100%;
   color: white;
   font-family: 'Arial', sans-serif;
   display: flex;
@@ -129,7 +138,7 @@ body {
 #gameContainer {
   position: relative;
   display: none;
-  width: min(calc(100dvw - 24px), calc((100dvh - 24px) * 16 / 9));
+  width: min(calc(var(--app-width) - 24px), calc((var(--app-height) - 24px) * 16 / 9));
   aspect-ratio: 16 / 9;
   max-width: none;
   max-height: none;
@@ -137,6 +146,13 @@ body {
   -webkit-touch-callout: none;
   user-select: none;
   -webkit-user-select: none;
+}
+
+body.standalone #gameContainer {
+  width: min(
+    calc(var(--app-width) - 32px),
+    calc((var(--app-height) - 32px) * 16 / 9)
+  );
 }
 
 canvas {
@@ -2111,6 +2127,25 @@ function updateOrientationState() {
 window.addEventListener('resize', updateOrientationState);
 window.addEventListener('orientationchange', updateOrientationState);
 updateOrientationState();
+
+function updateViewportVars() {
+  const viewport = window.visualViewport;
+  const w = viewport ? viewport.width : window.innerWidth;
+  const h = viewport ? viewport.height : window.innerHeight;
+  document.documentElement.style.setProperty('--app-width', w + 'px');
+  document.documentElement.style.setProperty('--app-height', h + 'px');
+
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  document.body.classList.toggle('standalone', isStandalone);
+}
+
+window.addEventListener('resize', updateViewportVars);
+window.addEventListener('orientationchange', updateViewportVars);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', updateViewportVars);
+  window.visualViewport.addEventListener('scroll', updateViewportVars);
+}
+updateViewportVars();
 
 </script></script>
 </body>
