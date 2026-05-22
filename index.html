@@ -283,7 +283,7 @@ canvas {
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(76, 175, 80, 0.08);
   border: 2px solid rgba(76, 175, 80, 0.3);
   box-shadow: 0 0 15px rgba(76, 175, 80, 0.15);
 }
@@ -293,7 +293,7 @@ canvas {
   width: 50px;
   height: 50px;
   border-radius: 50%;
-  background: rgba(76, 175, 80, 0.6);
+  background: rgba(76, 175, 80, 0.45);
   border: 2px solid rgba(76, 175, 80, 0.8);
   top: 50%;
   left: 50%;
@@ -516,18 +516,18 @@ canvas {
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
   #joystick,
   #joystickBase {
-    width: 96px;
-    height: 96px;
+    width: 88px;
+    height: 88px;
   }
 
   #joystickKnob {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
   }
 
   #joystick {
-    left: max(10px, env(safe-area-inset-left));
-    bottom: max(10px, env(safe-area-inset-bottom));
+    left: max(8px, env(safe-area-inset-left));
+    bottom: max(8px, env(safe-area-inset-bottom));
   }
 
   #pauseBtn {
@@ -1036,11 +1036,16 @@ function initGame() {
   const diff = difficulties[difficulty];
   player = {
     x: canvas.width / 2 - 20,
-    y: canvas.height - 80,
+    y: canvas.height - 120,
     size: 40,
     speed: 6,
     thrust: 0
   };
+
+  // Clamp player to safe area on touch devices
+  const inset = getPlayfieldInsets();
+  player.x = Math.max(inset.left, Math.min(canvas.width - player.size - inset.right, player.x));
+  player.y = Math.max(inset.top, Math.min(canvas.height - player.size - inset.bottom, player.y));
 
   enemies = [];
   particles = [];
@@ -1234,6 +1239,22 @@ function createParticles(x, y, color, count) {
   }
 }
 
+function getPlayfieldInsets() {
+  const isTouch = document.body.classList.contains('touchControls');
+  const isLandscape = window.innerWidth > window.innerHeight;
+  const isShortLandscape = isTouch && isLandscape && window.innerHeight <= 500;
+
+  if (isShortLandscape) {
+    return { top: 0, right: 0, bottom: 90, left: 110 };
+  }
+
+  if (isTouch && isLandscape) {
+    return { top: 0, right: 0, bottom: 75, left: 90 };
+  }
+
+  return { top: 0, right: 0, bottom: 0, left: 0 };
+}
+
 function updatePlayer() {
   const speedMul = activeEffects.speed ? 1.5 : 1;
   player.thrust = 0;
@@ -1241,8 +1262,10 @@ function updatePlayer() {
   if (keys["s"] || keys["arrowdown"]) { player.y += player.speed * speedMul * dt; player.thrust = 1; }
   if (keys["a"] || keys["arrowleft"]) { player.x -= player.speed * speedMul * dt; player.thrust = 1; }
   if (keys["d"] || keys["arrowright"]) { player.x += player.speed * speedMul * dt; player.thrust = 1; }
-  player.x = Math.max(0, Math.min(canvas.width - player.size, player.x));
-  player.y = Math.max(0, Math.min(canvas.height - player.size, player.y));
+
+  const inset = getPlayfieldInsets();
+  player.x = Math.max(inset.left, Math.min(canvas.width - player.size - inset.right, player.x));
+  player.y = Math.max(inset.top, Math.min(canvas.height - player.size - inset.bottom, player.y));
 }
 
 function updateSpawnTimers() {
