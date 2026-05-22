@@ -6,7 +6,7 @@ Dodge falling asteroids, collect gems, chain evasion combos, grab power-ups, and
 
 ## Play
 
-[https://VibezZzCoder.github.io/nebula-skimmer/](https://vibezzzcoder.github.io/Nebula-Skimmer/)
+[https://VibezZzCoder.github.io/Nebula-Skimmer/](https://vibezzzcoder.github.io/Nebula-Skimmer/)
 
 ## Controls
 
