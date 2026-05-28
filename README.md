@@ -12,7 +12,7 @@ Dodge falling asteroids, collect gems, chain evasion combos, grab power-ups, and
 
 - Move: `WASD` or arrow keys
 - Pause: `Esc`
-- Mobile: on-screen joystick and pause button
+- Mobile: touch screen and drag finger; and pause button
 
 ## Features
 
