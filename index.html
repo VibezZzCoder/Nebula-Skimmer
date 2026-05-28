@@ -135,6 +135,20 @@ body {
   font-size: 16px;
 }
 
+.controls p {
+  margin: 4px 0;
+}
+
+.touch-only {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .touch-only {
+    display: block;
+  }
+}
+
 #gameContainer {
   position: relative;
   display: none;
@@ -203,6 +217,24 @@ canvas {
 
 #restartBtn:hover {
   transform: scale(1.05);
+}
+
+#menuBtnGameOver {
+  display: block;
+  width: 100%;
+  margin-top: 10px;
+  background: #1a1a4e;
+  color: white;
+  border: 2px solid #4CAF50;
+  padding: 12px 40px;
+  font-size: clamp(14px, 2.5vw, 18px);
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+#menuBtnGameOver:hover {
+  background: #2a2a5e;
 }
 
 #highScoreTitle {
@@ -334,56 +366,72 @@ canvas {
   font-size: 14px;
 }
 
-/* ── Virtual Joystick ── */
+/* ── Pause Overlay ── */
 
-#joystick {
+#pauseOverlay {
   display: none;
   position: absolute;
-  bottom: 20px;
-  left: 20px;
-  width: 120px;
-  height: 120px;
-  z-index: 20;
-  touch-action: none;
-  -webkit-touch-callout: none;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
-.touchControls #joystick {
-  display: block;
-}
-
-#joystickBase {
-  position: absolute;
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: rgba(76, 175, 80, 0.08);
-  border: 2px solid rgba(76, 175, 80, 0.3);
-  box-shadow: 0 0 15px rgba(76, 175, 80, 0.15);
-}
-
-#joystickKnob {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  background: rgba(76, 175, 80, 0.45);
-  border: 2px solid rgba(76, 175, 80, 0.8);
-  top: 50%;
   left: 50%;
+  top: 50%;
   transform: translate(-50%, -50%);
-  transition: none;
-  pointer-events: none;
+  z-index: 25;
+  background: rgba(10, 10, 46, 0.95);
+  padding: 24px 32px;
+  border-radius: 15px;
+  text-align: center;
+  border: 3px solid #4CAF50;
+  box-shadow: 0 0 40px rgba(76, 175, 80, 0.3);
+  min-width: 200px;
+}
+
+#pauseOverlay h2 {
+  margin: 0 0 20px;
+  font-size: 32px;
+  color: #fff;
+}
+
+#resumeBtn {
+  display: block;
+  width: 100%;
+  margin-bottom: 12px;
+  background: linear-gradient(45deg, #4CAF50, #00BCD4);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  min-height: 44px;
+}
+
+#resumeBtn:hover {
+  transform: scale(1.03);
+}
+
+#menuBtnPause {
+  display: block;
+  width: 100%;
+  background: #1a1a4e;
+  color: white;
+  border: 2px solid #4CAF50;
+  padding: 10px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+#menuBtnPause:hover {
+  background: #2a2a5e;
 }
 
 /* ── Pause Button ── */
 
 #pauseBtn {
-  display: none;
+  display: flex;
   position: absolute;
-  top: 10px;
+  bottom: 10px;
   right: 10px;
   width: 48px;
   height: 48px;
@@ -398,10 +446,6 @@ canvas {
   -webkit-tap-highlight-color: transparent;
   line-height: 1;
   padding: 0;
-}
-
-.touchControls #pauseBtn {
-  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -590,28 +634,26 @@ canvas {
 /* ── Mobile Landscape Game Adjustments ── */
 
 @media (pointer: coarse) and (orientation: landscape) and (max-height: 500px) {
-  #joystick,
-  #joystickBase {
-    width: 88px;
-    height: 88px;
-  }
-
-  #joystickKnob {
-    width: 36px;
-    height: 36px;
-  }
-
-  #joystick {
-    left: max(8px, env(safe-area-inset-left));
-    bottom: max(8px, env(safe-area-inset-bottom));
-  }
-
   #pauseBtn {
     width: 42px;
     height: 42px;
-    top: max(8px, env(safe-area-inset-top));
+    bottom: max(8px, env(safe-area-inset-bottom));
     right: max(8px, env(safe-area-inset-right));
     font-size: 18px;
+  }
+
+  #pauseOverlay {
+    padding: 16px 24px;
+  }
+
+  #pauseOverlay h2 {
+    font-size: 24px;
+    margin-bottom: 12px;
+  }
+
+  #resumeBtn, #menuBtnPause {
+    padding: 8px 16px;
+    font-size: 14px;
   }
 
   #scoreDisplay {
@@ -641,7 +683,8 @@ canvas {
     </div>
     <button id="startBtn">Start Game</button>
     <div class="controls">
-      <p>Controls: WASD or Arrow Keys</p>
+      <p><strong>Keyboard:</strong> WASD or Arrow Keys to move, Escape to pause</p>
+      <p class="touch-only"><strong>Touch:</strong> Drag anywhere to move ship</p>
     </div>
     <div id="highScoreTitle">High Score: 0</div>
   </div>
@@ -662,9 +705,10 @@ canvas {
   <div id="gameContainer">
     <canvas id="game" width="960" height="540"></canvas>
     <div id="scoreDisplay">Score: 0</div>
-    <div id="joystick">
-      <div id="joystickBase"></div>
-      <div id="joystickKnob"></div>
+    <div id="pauseOverlay">
+      <h2>PAUSED</h2>
+      <button id="resumeBtn">Resume</button>
+      <button id="menuBtnPause">Menu</button>
     </div>
     <button id="pauseBtn" aria-label="Pause game">&#9208;</button>
     <div id="gameOverScreen">
@@ -678,6 +722,7 @@ canvas {
       </div>
       <p id="highScoreDisplay"></p>
       <button id="restartBtn">Play Again</button>
+      <button id="menuBtnGameOver">Menu</button>
     </div>
   </div>
 
@@ -698,10 +743,11 @@ const statEvaded = document.getElementById("statEvaded");
 const statCombo = document.getElementById("statCombo");
 const highScoreDisplay = document.getElementById("highScoreDisplay");
 const highScoreTitle = document.getElementById("highScoreTitle");
-const joystick = document.getElementById("joystick");
-const joystickBase = document.getElementById("joystickBase");
-const joystickKnob = document.getElementById("joystickKnob");
 const pauseBtn = document.getElementById("pauseBtn");
+const pauseOverlay = document.getElementById("pauseOverlay");
+const resumeBtn = document.getElementById("resumeBtn");
+const menuBtnPause = document.getElementById("menuBtnPause");
+const menuBtnGameOver = document.getElementById("menuBtnGameOver");
 
 let player, enemies, score, gameOver, particles, stars;
 let enemySpeed, spawnRate, lastSpawn, difficulty;
@@ -712,14 +758,12 @@ let lastEvasionTime, comboCount;
 let paused, gameActive, startTime, enemiesEvaded, maxCombo;
 let assetsReady = false;
 let gameOverTimeout;
-let gems, lastGemSpawn, gemSpawnInterval;
+let gems, lastGemSpawn;
 let bgMusicNodes;
 
-let joystickActive = false;
-let joystickCenter = { x: 0, y: 0 };
-let joystickTouchId = null;
-const JOYSTICK_DEADZONE = 10;
-const JOYSTICK_MAX_RADIUS = 35;
+let slideActive = false;
+let slideTouchId = null;
+let slideStart = { x: 0, y: 0 };
 
 const HIGH_SCORE_KEY = 'nebulaSkimmerHighScore';
 
@@ -750,9 +794,9 @@ const asteroidPalettes = [
 ];
 
 const difficulties = {
-  easy: { speed: 2, spawn: 1500, label: "Easy" },
-  medium: { speed: 3.5, spawn: 1000, label: "Medium" },
-  hard: { speed: 5, spawn: 600, label: "Hard" }
+  easy: { speed: 1.5, spawn: 2200, label: "Easy", speedScale: 0.10, spawnScale: 0.12 },
+  medium: { speed: 2.5, spawn: 1400, label: "Medium", speedScale: 0.12, spawnScale: 0.15 },
+  hard: { speed: 4, spawn: 700, label: "Hard", speedScale: 0.15, spawnScale: 0.18 }
 };
 
 difficulty = "easy";
@@ -775,8 +819,8 @@ function enableTouchControls() {
 
 function disableTouchControls() {
   gameContainer.classList.remove('touchControls');
-  joystickActive = false;
-  joystickTouchId = null;
+  slideActive = false;
+  slideTouchId = null;
 }
 
 document.addEventListener("touchstart", function initAudioOnTouch() {
@@ -922,7 +966,7 @@ function playSound(type, extra) {
     }
     case "combo": {
       const count = extra || 1;
-  for (let i = 0; i < LIVES_MAX; i++) {
+  for (let i = 0; i < 3; i++) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.connect(gain);
@@ -1163,7 +1207,6 @@ function initGame() {
   enemiesEvaded = 0;
   maxCombo = 0;
   lastGemSpawn = Date.now();
-  gemSpawnInterval = 4000 + Math.random() * 3000;
   if (gameOverTimeout) {
     clearTimeout(gameOverTimeout);
     gameOverTimeout = null;
@@ -1180,9 +1223,15 @@ function initGame() {
 
 function spawnEnemy() {
   const level = Math.floor(score / 100);
-  const speedMul = 1 + level * 0.15;
+  const diffConfig = difficulties[difficulty];
+  const speedMul = 1 + level * diffConfig.speedScale;
 
-  const roll = Math.random();
+  let roll = Math.random();
+  if (difficulty === 'easy') {
+    if (roll < 0.75) roll = 0;
+    else if (roll < 0.85) roll = 0.6;
+    else roll = 0.95;
+  }
   let type, size, palette, scoreVal, numCraters, numPoints;
   if (roll < 0.55) {
     type = 'standard';
@@ -1260,11 +1309,12 @@ function spawnEnemy() {
 function createFragment(parent) {
   const fragSize = 14 + Math.random() * 6;
   const radius = fragSize / 2;
+  const fragSpeed = difficulty === 'easy' ? enemySpeed * 1.0 : enemySpeed * 1.3;
   return {
     x: parent.x + (Math.random() - 0.5) * 40,
     y: canvas.height - fragSize - Math.random() * 10,
     size: fragSize,
-    speed: enemySpeed * 1.3 + Math.random() * 1,
+    speed: fragSpeed + Math.random() * 1,
     moveType: 'straight',
     time: 0,
     startX: parent.x,
@@ -1335,11 +1385,11 @@ function getPlayfieldInsets() {
   const isShortLandscape = isTouch && isLandscape && window.innerHeight <= 500;
 
   if (isShortLandscape) {
-    return { top: 0, right: 0, bottom: 90, left: 110 };
+    return { top: 0, right: 0, bottom: 0, left: 0 };
   }
 
   if (isTouch && isLandscape) {
-    return { top: 0, right: 0, bottom: 75, left: 90 };
+    return { top: 0, right: 0, bottom: 0, left: 0 };
   }
 
   return { top: 0, right: 0, bottom: 0, left: 0 };
@@ -1360,15 +1410,16 @@ function updatePlayer() {
 
 function updateSpawnTimers() {
   const level = Math.floor(score / 100);
-  const currentSpawnRate = spawnRate / (1 + level * 0.2);
+  const diffConfig = difficulties[difficulty];
+  const currentSpawnRate = spawnRate / (1 + level * diffConfig.spawnScale);
   if (Date.now() - lastSpawn > currentSpawnRate) {
     spawnEnemy();
     lastSpawn = Date.now();
   }
-  if (Date.now() - lastGemSpawn > gemSpawnInterval) {
+  const gemInterval = difficulty === 'easy' ? 6000 + Math.random() * 4000 : 5000 + Math.random() * 4000;
+  if (Date.now() - lastGemSpawn > gemInterval) {
     spawnGem();
     lastGemSpawn = Date.now();
-    gemSpawnInterval = 5000 + Math.random() * 4000;
   }
 }
 
@@ -1579,7 +1630,7 @@ function updateActiveEffects() {
 }
 
 function update() {
-  if (gameOver || paused) return;
+  if (!gameActive || gameOver || paused) return;
   updatePlayer();
   updateSpawnTimers();
   updateEnemyMovement();
@@ -1895,11 +1946,12 @@ function drawTrail() {
 }
 
 function drawLives() {
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < LIVES_MAX; i++) {
     const cx = canvas.width - 25 - i * 28;
     const cy = 20;
     const s = 10;
-    ctx.fillStyle = i < lives ? '#4CAF50' : 'rgba(76, 175, 80, 0.25)';
+    const lifeIndex = LIVES_MAX - 1 - i;
+    ctx.fillStyle = lifeIndex < lives ? '#4CAF50' : 'rgba(76, 175, 80, 0.25)';
     ctx.beginPath();
     ctx.moveTo(cx, cy - s);
     ctx.lineTo(cx - s, cy + s);
@@ -1963,22 +2015,6 @@ function drawLevel() {
   ctx.fillText("Level " + level, 15, yPos);
 }
 
-function drawPauseOverlay() {
-  if (!paused) return;
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 48px Arial';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('PAUSED', canvas.width / 2, canvas.height / 2 - 30);
-
-  ctx.fillStyle = '#aaa';
-  ctx.font = '20px Arial';
-  ctx.fillText('Press ESC to continue', canvas.width / 2, canvas.height / 2 + 20);
-}
-
 function draw() {
   if (shakeIntensity > 0.5) {
     const sx = (Math.random() - 0.5) * shakeIntensity * 2;
@@ -2009,97 +2045,122 @@ function draw() {
   if (shakeIntensity > 0.5) {
     ctx.restore();
   }
-
-  drawPauseOverlay();
 }
 
 let loopId = null;
 
-function getJoystickBaseCenter() {
-  const rect = joystickBase.getBoundingClientRect();
-  return {
-    x: rect.left + rect.width / 2,
-    y: rect.top + rect.height / 2
-  };
+function resetSlideKeys() {
+  keys["w"] = false;
+  keys["s"] = false;
+  keys["a"] = false;
+  keys["d"] = false;
 }
 
-function handleJoystickTouch(touch) {
-  const center = getJoystickBaseCenter();
-  let dx = touch.clientX - center.x;
-  let dy = touch.clientY - center.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-
-  if (dist > JOYSTICK_MAX_RADIUS) {
-    dx = (dx / dist) * JOYSTICK_MAX_RADIUS;
-    dy = (dy / dist) * JOYSTICK_MAX_RADIUS;
-  }
-
-  const knobX = dx;
-  const knobY = dy;
-  joystickKnob.style.transform = `translate(calc(-50% + ${knobX}px), calc(-50% + ${knobY}px))`;
-
-  keys["w"] = dy < -JOYSTICK_DEADZONE;
-  keys["s"] = dy > JOYSTICK_DEADZONE;
-  keys["a"] = dx < -JOYSTICK_DEADZONE;
-  keys["d"] = dx > JOYSTICK_DEADZONE;
+function handleSlideTouch(touch) {
+  const rect = gameContainer.getBoundingClientRect();
+  const canvasX = (touch.clientX - rect.left) / rect.width * canvas.width;
+  const canvasY = (touch.clientY - rect.top) / rect.height * canvas.height;
+  const dx = canvasX - slideStart.x;
+  const dy = canvasY - slideStart.y;
+  const maxDist = 80;
+  const clampDx = Math.max(-maxDist, Math.min(maxDist, dx));
+  const clampDy = Math.max(-maxDist, Math.min(maxDist, dy));
+  const nx = clampDx / maxDist;
+  const ny = clampDy / maxDist;
+  const dead = 0.2;
+  keys["a"] = nx < -dead;
+  keys["d"] = nx > dead;
+  keys["w"] = ny < -dead;
+  keys["s"] = ny > dead;
 }
 
-function resetJoystickKeys() {
-  if (keys["w"] && !keys["arrowup"]) keys["w"] = false;
-  if (keys["s"] && !keys["arrowdown"]) keys["s"] = false;
-  if (keys["a"] && !keys["arrowleft"]) keys["a"] = false;
-  if (keys["d"] && !keys["arrowright"]) keys["d"] = false;
-}
-
-joystickBase.addEventListener("touchstart", (e) => {
-  e.preventDefault();
-  if (joystickActive) return;
+gameContainer.addEventListener("touchstart", (e) => {
+  if (slideActive || paused) return;
   const touch = e.changedTouches[0];
-  joystickActive = true;
-  joystickTouchId = touch.identifier;
-  handleJoystickTouch(touch);
-}, { passive: false });
+  slideActive = true;
+  slideTouchId = touch.identifier;
+  const rect = gameContainer.getBoundingClientRect();
+  slideStart.x = (touch.clientX - rect.left) / rect.width * canvas.width;
+  slideStart.y = (touch.clientY - rect.top) / rect.height * canvas.height;
+  handleSlideTouch(touch);
+}, { passive: true });
 
-joystickBase.addEventListener("touchmove", (e) => {
-  e.preventDefault();
-  if (!joystickActive) return;
+gameContainer.addEventListener("touchmove", (e) => {
+  if (!slideActive) return;
   for (let i = 0; i < e.changedTouches.length; i++) {
-    if (e.changedTouches[i].identifier === joystickTouchId) {
-      handleJoystickTouch(e.changedTouches[i]);
+    if (e.changedTouches[i].identifier === slideTouchId) {
+      handleSlideTouch(e.changedTouches[i]);
       break;
     }
   }
-}, { passive: false });
+}, { passive: true });
 
-joystickBase.addEventListener("touchend", (e) => {
-  e.preventDefault();
+gameContainer.addEventListener("touchend", (e) => {
   for (let i = 0; i < e.changedTouches.length; i++) {
-    if (e.changedTouches[i].identifier === joystickTouchId) {
-      joystickActive = false;
-      joystickTouchId = null;
-      joystickKnob.style.transform = 'translate(-50%, -50%)';
-      resetJoystickKeys();
+    if (e.changedTouches[i].identifier === slideTouchId) {
+      slideActive = false;
+      slideTouchId = null;
+      resetSlideKeys();
       break;
     }
   }
-}, { passive: false });
+}, { passive: true });
 
-joystickBase.addEventListener("touchcancel", (e) => {
-  joystickActive = false;
-  joystickTouchId = null;
-  joystickKnob.style.transform = 'translate(-50%, -50%)';
-  resetJoystickKeys();
-});
+gameContainer.addEventListener("touchcancel", () => {
+  slideActive = false;
+  slideTouchId = null;
+  resetSlideKeys();
+}, { passive: true });
+
+function togglePause() {
+  if (!gameActive) return;
+  paused = !paused;
+  if (paused) {
+    pauseOverlay.style.display = 'flex';
+  } else {
+    pauseOverlay.style.display = 'none';
+    lastSpawn = Date.now();
+    lastTime = 0;
+  }
+}
 
 pauseBtn.addEventListener("click", (e) => {
   e.preventDefault();
-  if (gameActive) {
-    paused = !paused;
-    if (!paused) {
-      lastSpawn = Date.now();
-      lastTime = 0;
-    }
+  togglePause();
+});
+
+resumeBtn.addEventListener("click", (e) => {
+  e.preventDefault();
+  togglePause();
+});
+
+function returnToMenu() {
+  if (loopId) {
+    cancelAnimationFrame(loopId);
+    loopId = null;
   }
+  stopBgMusic(true);
+  gameActive = false;
+  gameOver = false;
+  paused = false;
+  startingGame = false;
+  pauseOverlay.style.display = 'none';
+  gameOverScreen.style.display = 'none';
+  document.body.classList.remove('playing');
+  disableTouchControls();
+  gameContainer.style.display = 'none';
+  titleScreen.style.display = '';
+  highScoreTitle.textContent = "High Score: " + getHighScore();
+}
+
+menuBtnPause.addEventListener("click", (e) => {
+  e.preventDefault();
+  returnToMenu();
+});
+
+menuBtnGameOver.addEventListener("click", (e) => {
+  e.preventDefault();
+  returnToMenu();
 });
 
 
@@ -2124,11 +2185,7 @@ window.addEventListener("keydown", (event) => {
   }
   if (event.key.toLowerCase() === "escape" && gameActive && !event.repeat) {
     event.preventDefault();
-    paused = !paused;
-    if (!paused) {
-      lastSpawn = Date.now();
-      lastTime = 0;
-    }
+    togglePause();
   }
 });
 
@@ -2173,6 +2230,7 @@ restartBtn.addEventListener("click", () => {
   }
   playSound("start");
   initGame();
+  startBgMusic();
 });
 
 highScoreTitle.textContent = "High Score: " + getHighScore();
