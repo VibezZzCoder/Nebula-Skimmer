@@ -764,6 +764,7 @@ let bgMusicNodes;
 let slideActive = false;
 let slideTouchId = null;
 let slideStart = { x: 0, y: 0 };
+let touchVel = { x: 0, y: 0 };
 
 const HIGH_SCORE_KEY = 'nebulaSkimmerHighScore';
 
@@ -1402,6 +1403,14 @@ function updatePlayer() {
   if (keys["s"] || keys["arrowdown"]) { player.y += player.speed * speedMul * dt; player.thrust = 1; }
   if (keys["a"] || keys["arrowleft"]) { player.x -= player.speed * speedMul * dt; player.thrust = 1; }
   if (keys["d"] || keys["arrowright"]) { player.x += player.speed * speedMul * dt; player.thrust = 1; }
+
+  if (slideActive) {
+    player.x += touchVel.x * player.speed * speedMul * dt;
+    player.y += touchVel.y * player.speed * speedMul * dt;
+    if (Math.abs(touchVel.x) > 0.2 || Math.abs(touchVel.y) > 0.2) {
+      player.thrust = 1;
+    }
+  }
 
   const inset = getPlayfieldInsets();
   player.x = Math.max(inset.left, Math.min(canvas.width - player.size - inset.right, player.x));
@@ -2054,6 +2063,8 @@ function resetSlideKeys() {
   keys["s"] = false;
   keys["a"] = false;
   keys["d"] = false;
+  touchVel.x = 0;
+  touchVel.y = 0;
 }
 
 function handleSlideTouch(touch) {
@@ -2065,13 +2076,8 @@ function handleSlideTouch(touch) {
   const maxDist = 80;
   const clampDx = Math.max(-maxDist, Math.min(maxDist, dx));
   const clampDy = Math.max(-maxDist, Math.min(maxDist, dy));
-  const nx = clampDx / maxDist;
-  const ny = clampDy / maxDist;
-  const dead = 0.2;
-  keys["a"] = nx < -dead;
-  keys["d"] = nx > dead;
-  keys["w"] = ny < -dead;
-  keys["s"] = ny > dead;
+  touchVel.x = clampDx / maxDist;
+  touchVel.y = clampDy / maxDist;
 }
 
 gameContainer.addEventListener("touchstart", (e) => {
