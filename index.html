@@ -763,8 +763,8 @@ let bgMusicNodes;
 
 let slideActive = false;
 let slideTouchId = null;
-let slideStart = { x: 0, y: 0 };
-let touchVel = { x: 0, y: 0 };
+let lastTouchPos = { x: 0, y: 0 };
+let touchAccum = { x: 0, y: 0 };
 
 const HIGH_SCORE_KEY = 'nebulaSkimmerHighScore';
 
@@ -822,6 +822,8 @@ function disableTouchControls() {
   gameContainer.classList.remove('touchControls');
   slideActive = false;
   slideTouchId = null;
+  touchAccum.x = 0;
+  touchAccum.y = 0;
 }
 
 document.addEventListener("touchstart", function initAudioOnTouch() {
@@ -1405,11 +1407,13 @@ function updatePlayer() {
   if (keys["d"] || keys["arrowright"]) { player.x += player.speed * speedMul * dt; player.thrust = 1; }
 
   if (slideActive) {
-    player.x += touchVel.x * player.speed * speedMul * dt;
-    player.y += touchVel.y * player.speed * speedMul * dt;
-    if (Math.abs(touchVel.x) > 0.2 || Math.abs(touchVel.y) > 0.2) {
+    player.x += touchAccum.x;
+    player.y += touchAccum.y;
+    if (Math.abs(touchAccum.x) > 0.2 || Math.abs(touchAccum.y) > 0.2) {
       player.thrust = 1;
     }
+    touchAccum.x = 0;
+    touchAccum.y = 0;
   }
 
   const inset = getPlayfieldInsets();
@@ -2063,21 +2067,18 @@ function resetSlideKeys() {
   keys["s"] = false;
   keys["a"] = false;
   keys["d"] = false;
-  touchVel.x = 0;
-  touchVel.y = 0;
+  touchAccum.x = 0;
+  touchAccum.y = 0;
 }
 
 function handleSlideTouch(touch) {
   const rect = gameContainer.getBoundingClientRect();
-  const canvasX = (touch.clientX - rect.left) / rect.width * canvas.width;
-  const canvasY = (touch.clientY - rect.top) / rect.height * canvas.height;
-  const dx = canvasX - slideStart.x;
-  const dy = canvasY - slideStart.y;
-  const maxDist = 80;
-  const clampDx = Math.max(-maxDist, Math.min(maxDist, dx));
-  const clampDy = Math.max(-maxDist, Math.min(maxDist, dy));
-  touchVel.x = clampDx / maxDist;
-  touchVel.y = clampDy / maxDist;
+  const cx = (touch.clientX - rect.left) / rect.width * canvas.width;
+  const cy = (touch.clientY - rect.top) / rect.height * canvas.height;
+  touchAccum.x += cx - lastTouchPos.x;
+  touchAccum.y += cy - lastTouchPos.y;
+  lastTouchPos.x = cx;
+  lastTouchPos.y = cy;
 }
 
 gameContainer.addEventListener("touchstart", (e) => {
@@ -2086,9 +2087,10 @@ gameContainer.addEventListener("touchstart", (e) => {
   slideActive = true;
   slideTouchId = touch.identifier;
   const rect = gameContainer.getBoundingClientRect();
-  slideStart.x = (touch.clientX - rect.left) / rect.width * canvas.width;
-  slideStart.y = (touch.clientY - rect.top) / rect.height * canvas.height;
-  handleSlideTouch(touch);
+  lastTouchPos.x = (touch.clientX - rect.left) / rect.width * canvas.width;
+  lastTouchPos.y = (touch.clientY - rect.top) / rect.height * canvas.height;
+  touchAccum.x = 0;
+  touchAccum.y = 0;
 }, { passive: true });
 
 gameContainer.addEventListener("touchmove", (e) => {
@@ -2198,10 +2200,6 @@ window.addEventListener("keydown", (event) => {
 window.addEventListener("keyup", (event) => {
   keys[event.key.toLowerCase()] = false;
 });
-
-canvas.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
-canvas.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
-canvas.addEventListener("touchend", (e) => e.preventDefault(), { passive: false });
 
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && gameActive && !paused) {
