@@ -1176,7 +1176,8 @@ function initGame() {
     y: canvas.height - 120,
     size: 40,
     speed: 6,
-    thrust: 0
+    thrust: 0,
+    rotation: 0
   };
 
   // Clamp player to safe area on touch devices
@@ -1399,6 +1400,8 @@ function getPlayfieldInsets() {
 }
 
 function updatePlayer() {
+  const prevX = player.x;
+  const prevY = player.y;
   const speedMul = activeEffects.speed ? 1.5 : 1;
   player.thrust = 0;
   if (keys["w"] || keys["arrowup"]) { player.y -= player.speed * speedMul * dt; player.thrust = 1; }
@@ -1419,6 +1422,16 @@ function updatePlayer() {
   const inset = getPlayfieldInsets();
   player.x = Math.max(inset.left, Math.min(canvas.width - player.size - inset.right, player.x));
   player.y = Math.max(inset.top, Math.min(canvas.height - player.size - inset.bottom, player.y));
+
+  const dx = player.x - prevX;
+  const dy = player.y - prevY;
+  if (Math.abs(dx) > 0.01 || Math.abs(dy) > 0.01) {
+    const target = Math.atan2(dy, dx);
+    let diff = target - player.rotation;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    player.rotation += diff * 0.12;
+  }
 }
 
 function updateSpawnTimers() {
@@ -1711,6 +1724,7 @@ function drawPlayer() {
 
   ctx.save();
   ctx.translate(cx, cy);
+  ctx.rotate(player.rotation + Math.PI / 2);
 
   const glowGrad = ctx.createRadialGradient(0, s * 0.35, 0, 0, s * 0.35, s * 0.5);
   glowGrad.addColorStop(0, 'rgba(0, 200, 255, 0.12)');
