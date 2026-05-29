@@ -758,8 +758,9 @@ let lastEvasionTime, comboCount;
 let paused, gameActive, startTime, enemiesEvaded, maxCombo;
 let assetsReady = false;
 let gameOverTimeout;
-let gems, lastGemSpawn;
+let gems, lastGemSpawn, nextGemSpawnInterval;
 let bgMusicNodes;
+let bgMusicFadeTimeout;
 
 let slideActive = false;
 let slideTouchId = null;
@@ -1037,12 +1038,14 @@ function startBgMusic() {
   const osc3 = audioCtx.createOscillator();
   osc3.type = 'sine';
   osc3.frequency.setValueAtTime(130.8, now);
-  osc3.gain = audioCtx.createGain();
-  osc3.gain.gain.value = 0.5;
+
+  const osc3Gain = audioCtx.createGain();
+  osc3Gain.gain.value = 0.5;
 
   osc1.connect(filter);
   osc2.connect(filter);
-  osc3.connect(filter);
+  osc3.connect(osc3Gain);
+  osc3Gain.connect(filter);
   filter.connect(masterGain);
 
   osc1.start();
@@ -1050,22 +1053,28 @@ function startBgMusic() {
   osc3.start();
   lfo.start();
 
-  bgMusicNodes = { osc1, osc2, osc3, lfo, masterGain, filter };
+  bgMusicNodes = { osc1, osc2, osc3, osc3Gain, lfo, masterGain, filter };
 }
 
 function stopBgMusic(fadeOut) {
-  if (!bgMusicNodes) return;
+  if (!bgMusicNodes || !audioCtx) return;
+  if (bgMusicFadeTimeout) {
+    clearTimeout(bgMusicFadeTimeout);
+    bgMusicFadeTimeout = null;
+  }
   if (fadeOut) {
     const now = audioCtx.currentTime;
     bgMusicNodes.masterGain.gain.cancelScheduledValues(now);
     bgMusicNodes.masterGain.gain.setValueAtTime(bgMusicNodes.masterGain.gain.value, now);
     bgMusicNodes.masterGain.gain.linearRampToValueAtTime(0, now + 1);
-    setTimeout(() => {
+    bgMusicFadeTimeout = setTimeout(() => {
+      bgMusicFadeTimeout = null;
       if (!bgMusicNodes) return;
       bgMusicNodes.osc1.stop();
       bgMusicNodes.osc2.stop();
       bgMusicNodes.osc3.stop();
       bgMusicNodes.lfo.stop();
+      bgMusicNodes.osc3Gain.disconnect();
       bgMusicNodes = null;
     }, 1100);
   } else {
@@ -1073,6 +1082,7 @@ function stopBgMusic(fadeOut) {
     bgMusicNodes.osc2.stop();
     bgMusicNodes.osc3.stop();
     bgMusicNodes.lfo.stop();
+    bgMusicNodes.osc3Gain.disconnect();
     bgMusicNodes = null;
   }
 }
@@ -1211,6 +1221,8 @@ function initGame() {
   enemiesEvaded = 0;
   maxCombo = 0;
   lastGemSpawn = Date.now();
+  nextGemSpawnInterval = difficulty === 'easy' ? 6000 + Math.random() * 4000 : 5000 + Math.random() * 4000;
+  startingGame = false;
   if (gameOverTimeout) {
     clearTimeout(gameOverTimeout);
     gameOverTimeout = null;
@@ -1340,11 +1352,12 @@ function createFragment(parent) {
 
 function spawnGem() {
   const size = 18;
+  const gemSpeed = difficulty === 'easy' ? 0.8 : difficulty === 'hard' ? 1.3 : 1;
   gems.push({
     x: Math.random() * (canvas.width - size * 3) + size,
     y: -size,
     size: size,
-    speed: 1,
+    speed: gemSpeed,
     time: 0
   });
 }
@@ -1442,10 +1455,10 @@ function updateSpawnTimers() {
     spawnEnemy();
     lastSpawn = Date.now();
   }
-  const gemInterval = difficulty === 'easy' ? 6000 + Math.random() * 4000 : 5000 + Math.random() * 4000;
-  if (Date.now() - lastGemSpawn > gemInterval) {
+  if (Date.now() - lastGemSpawn > nextGemSpawnInterval) {
     spawnGem();
     lastGemSpawn = Date.now();
+    nextGemSpawnInterval = difficulty === 'easy' ? 6000 + Math.random() * 4000 : 5000 + Math.random() * 4000;
   }
 }
 
@@ -1474,6 +1487,7 @@ function processEvasion(newEnemies) {
       } else {
         comboCount = 1;
       }
+      comboCount = Math.min(comboCount, 200);
       lastEvasionTime = now;
       enemiesEvaded++;
       if (comboCount > maxCombo) maxCombo = comboCount;
@@ -1957,6 +1971,7 @@ function drawScorePopups() {
     ctx.shadowBlur = 6;
     ctx.fillText(p.text, p.x, p.y);
     ctx.shadowBlur = 0;
+    ctx.shadowColor = 'transparent';
   });
   ctx.globalAlpha = 1;
 }
@@ -2219,6 +2234,9 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden && gameActive && !paused) {
     paused = true;
   }
+  if (!document.hidden && !paused) {
+    Object.keys(keys).forEach(k => { keys[k] = false; });
+  }
 });
 
 let startingGame = false;
@@ -2246,6 +2264,7 @@ restartBtn.addEventListener("click", () => {
     clearTimeout(gameOverTimeout);
     gameOverTimeout = null;
   }
+  stopBgMusic(false);
   playSound("start");
   initGame();
   startBgMusic();
